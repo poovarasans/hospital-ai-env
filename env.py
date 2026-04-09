@@ -283,28 +283,30 @@ class HospitalEnv:
 
     def step(self, action):
         reward = 0
-        if action < len(self.patients):
-            patient = self.patients.pop(action)
 
-            prescription = self.generate_prescription(patient)
-            patient["prescription"] = prescription
+        if action >= len(self.patients):
+            return self.state(), -5.0, False, {"error": "invalid action"}
 
-            reward += patient["severity"]
+        patient = self.patients.pop(action)
 
-            if patient["category"] in ["cardio", "neuro"] and patient["staff_type"] == "doctor":
-                reward += 5
-            elif patient["severity"] <= 2 and patient["staff_type"] == "pharmacist":
-                reward += 3
-            else:
-                reward -= 2
+        prescription = self.generate_prescription(patient)
+        patient["prescription"] = prescription
 
-            self.completed.append(patient)
-            self.treated_count += 1
+        reward += patient["severity"]
+
+        if patient["category"] in ["cardio", "neuro"] and patient["staff_type"] == "doctor":
+            reward += 5
+        elif patient["severity"] <= 2 and patient["staff_type"] == "pharmacist":
+            reward += 3
+        else:
+            reward -= 2
+
+        self.completed.append(patient)
+        self.treated_count += 1
 
         for p in self.patients:
             p["wait"] += 1
 
-        # dynamic patients
         for _ in range(random.randint(0, 2)):
             self.counter += 1
             self.patients.append(self.generate_patient(self.counter))
@@ -313,7 +315,7 @@ class HospitalEnv:
 
         done = len(self.patients) == 0
 
-        return self.state(), reward, done, {
+        return self.state(), float(round(reward, 2)), done, {
             "staff": patient["staff_type"],
             "prescription": prescription
         }

@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN pip install fastapi uvicorn pydantic
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["uvicorn", "inference:app", "--host", "0.0.0.0", "--port", "7860"]
+# Run FastAPI
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
