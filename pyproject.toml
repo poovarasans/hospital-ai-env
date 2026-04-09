@@ -1,0 +1,19 @@
+[project]
+name = "hospital-ai-env"
+version = "0.1.0"
+description = "Hospital OpenEnv Hackathon"
+authors = [
+    { name = "Poovarasan" }
+]
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "openenv>=0.1.13"
+]
+
+[project.scripts]
+server = "api:main"
+
+[tool.openenv]
