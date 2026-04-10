@@ -1,5 +1,8 @@
-import random
+from openai import OpenAI
 from collections import defaultdict
+
+import random
+import os
 
 class HospitalEnv:
     def __init__(self, mode="easy"):
@@ -196,62 +199,78 @@ class HospitalEnv:
             "prescription": None
         }
 
-    # prescription
     def generate_prescription(self, patient):
+        client = OpenAI(
+            base_url=os.environ["API_BASE_URL"],
+            api_key=os.environ["API_KEY"]
+        )
 
-        prescriptions = {
-            "cardio": [
-                "ECG + BP tablets",
-                "Blood test + lifestyle changes",
-                "Heart scan + medication"
-            ],
-            "neuro": [
-                "MRI scan + neurologist consult",
-                "Pain relief medication",
-                "Brain scan + rest"
-            ],
-            "ortho": [
-                "X-ray + pain relief gel",
-                "Physiotherapy + rest",
-                "Bone scan + calcium tablets"
-            ],
-            "gyno": [
-                "Hormone test + medication",
-                "Ultrasound scan",
-                "Iron tablets + rest"
-            ],
-            "general": [
-                "Paracetamol + rest",
-                "Antibiotics course",
-                "Hydration + basic meds"
-            ],
-            "pedia": [
-                "Syrup + rest",
-                "Fever medication for child",
-                "Pediatric check + fluids"
-            ],
-            "dental": [
-                "Dental cleaning + medication",
-                "Tooth filling + pain relief",
-                "Root canal treatment suggested",
-                "Antibiotics + dental checkup"
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a doctor."},
+                {"role": "user", "content": f"Give treatment for patient: {patient}"}
             ]
-        }
+        )
+
+        return response.choices[0].message.content
+
+    # prescription
+    # def generate_prescription(self, patient):
+
+    #     prescriptions = {
+    #         "cardio": [
+    #             "ECG + BP tablets",
+    #             "Blood test + lifestyle changes",
+    #             "Heart scan + medication"
+    #         ],
+    #         "neuro": [
+    #             "MRI scan + neurologist consult",
+    #             "Pain relief medication",
+    #             "Brain scan + rest"
+    #         ],
+    #         "ortho": [
+    #             "X-ray + pain relief gel",
+    #             "Physiotherapy + rest",
+    #             "Bone scan + calcium tablets"
+    #         ],
+    #         "gyno": [
+    #             "Hormone test + medication",
+    #             "Ultrasound scan",
+    #             "Iron tablets + rest"
+    #         ],
+    #         "general": [
+    #             "Paracetamol + rest",
+    #             "Antibiotics course",
+    #             "Hydration + basic meds"
+    #         ],
+    #         "pedia": [
+    #             "Syrup + rest",
+    #             "Fever medication for child",
+    #             "Pediatric check + fluids"
+    #         ],
+    #         "dental": [
+    #             "Dental cleaning + medication",
+    #             "Tooth filling + pain relief",
+    #             "Root canal treatment suggested",
+    #             "Antibiotics + dental checkup"
+    #         ]
+    #     }
         
-        if patient["category"] == "Ortho":
-            return random.choice(prescriptions["ortho"])
-        elif patient["category"] == "Neuro":
-            return random.choice(prescriptions["neuro"])
-        elif patient["category"] == "Gyno":
-            return random.choice(prescriptions["gyno"])
-        elif patient["category"] == "General":
-            return random.choice(prescriptions["general"])
-        elif patient["category"] == "Cardio":
-            return random.choice(prescriptions["cardio"])
-        elif patient["category"] == "Pediatrics":
-            return random.choice(prescriptions["pedia"])
-        else:
-            return random.choice(prescriptions["dental"])
+    #     if patient["category"] == "Ortho":
+    #         return random.choice(prescriptions["ortho"])
+    #     elif patient["category"] == "Neuro":
+    #         return random.choice(prescriptions["neuro"])
+    #     elif patient["category"] == "Gyno":
+    #         return random.choice(prescriptions["gyno"])
+    #     elif patient["category"] == "General":
+    #         return random.choice(prescriptions["general"])
+    #     elif patient["category"] == "Cardio":
+    #         return random.choice(prescriptions["cardio"])
+    #     elif patient["category"] == "Pediatrics":
+    #         return random.choice(prescriptions["pedia"])
+    #     else:
+    #         return random.choice(prescriptions["dental"])
 
     def reset(self):
         self.counter = 0
