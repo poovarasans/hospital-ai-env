@@ -2,6 +2,10 @@ import os
 import json
 from env import HospitalEnv
 
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
 def choose_action(patients):
     return max(
         range(len(patients)),
