@@ -320,11 +320,13 @@ class HospitalEnv:
         reward += patient["severity"]
 
         if patient["category"] in ["Cardio", "Neuro"] and patient["staff_type"] == "doctor":
-            reward += 5
+            reward += 7
         elif patient["severity"] <= 2 and patient["staff_type"] == "pharmacist":
             reward += 3
+        elif patient["severity"] >= 4 and patient["staff_type"] == "doctor":
+            reward += 4
         else:
-            reward -= 2
+            reward -= 3
 
         self.completed.append(patient)
         self.treated_count += 1
