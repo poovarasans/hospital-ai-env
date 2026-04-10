@@ -199,12 +199,75 @@ class HospitalEnv:
             "prescription": None
         }
 
+    # Prescription using LLM
     def generate_prescription(self, patient):
+
+        base_url = os.getenv("API_BASE_URL")
+        api_key = os.getenv("API_KEY")
+
+        # fallback preset prescription
+        prescriptions = {
+            "cardio": [
+                "ECG + BP tablets",
+                "Blood test + lifestyle changes",
+                "Heart scan + medication"
+            ],
+            "neuro": [
+                "MRI scan + neurologist consult",
+                "Pain relief medication",
+                "Brain scan + rest"
+            ],
+            "ortho": [
+                "X-ray + pain relief gel",
+                "Physiotherapy + rest",
+                "Bone scan + calcium tablets"
+            ],
+            "gyno": [
+                "Hormone test + medication",
+                "Ultrasound scan",
+                "Iron tablets + rest"
+            ],
+            "general": [
+                "Paracetamol + rest",
+                "Antibiotics course",
+                "Hydration + basic meds"
+            ],
+            "pedia": [
+                "Syrup + rest",
+                "Fever medication for child",
+                "Pediatric check + fluids"
+            ],
+            "dental": [
+                "Dental cleaning + medication",
+                "Tooth filling + pain relief",
+                "Root canal treatment suggested",
+                "Antibiotics + dental checkup"
+            ]
+        }
+
+        # fallback if env not present
+        if not base_url or not api_key:
+            if patient["category"] == "Ortho":
+                return random.choice(prescriptions["ortho"])
+            elif patient["category"] == "Neuro":
+                return random.choice(prescriptions["neuro"])
+            elif patient["category"] == "Gyno":
+                return random.choice(prescriptions["gyno"])
+            elif patient["category"] == "General":
+                return random.choice(prescriptions["general"])
+            elif patient["category"] == "Cardio":
+                return random.choice(prescriptions["cardio"])
+            elif patient["category"] == "Pediatrics":
+                return random.choice(prescriptions["pedia"])
+            else:
+                return random.choice(prescriptions["dental"])
+
         client = OpenAI(
-            base_url=os.environ["API_BASE_URL"],
-            api_key=os.environ["API_KEY"]
+            base_url=base_url,
+            api_key=api_key
         )
 
+        # getting prescription from LLM
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -214,63 +277,6 @@ class HospitalEnv:
         )
 
         return response.choices[0].message.content
-
-    # prescription
-    # def generate_prescription(self, patient):
-
-    #     prescriptions = {
-    #         "cardio": [
-    #             "ECG + BP tablets",
-    #             "Blood test + lifestyle changes",
-    #             "Heart scan + medication"
-    #         ],
-    #         "neuro": [
-    #             "MRI scan + neurologist consult",
-    #             "Pain relief medication",
-    #             "Brain scan + rest"
-    #         ],
-    #         "ortho": [
-    #             "X-ray + pain relief gel",
-    #             "Physiotherapy + rest",
-    #             "Bone scan + calcium tablets"
-    #         ],
-    #         "gyno": [
-    #             "Hormone test + medication",
-    #             "Ultrasound scan",
-    #             "Iron tablets + rest"
-    #         ],
-    #         "general": [
-    #             "Paracetamol + rest",
-    #             "Antibiotics course",
-    #             "Hydration + basic meds"
-    #         ],
-    #         "pedia": [
-    #             "Syrup + rest",
-    #             "Fever medication for child",
-    #             "Pediatric check + fluids"
-    #         ],
-    #         "dental": [
-    #             "Dental cleaning + medication",
-    #             "Tooth filling + pain relief",
-    #             "Root canal treatment suggested",
-    #             "Antibiotics + dental checkup"
-    #         ]
-    #     }
-        
-    #     if patient["category"] == "Ortho":
-    #         return random.choice(prescriptions["ortho"])
-    #     elif patient["category"] == "Neuro":
-    #         return random.choice(prescriptions["neuro"])
-    #     elif patient["category"] == "Gyno":
-    #         return random.choice(prescriptions["gyno"])
-    #     elif patient["category"] == "General":
-    #         return random.choice(prescriptions["general"])
-    #     elif patient["category"] == "Cardio":
-    #         return random.choice(prescriptions["cardio"])
-    #     elif patient["category"] == "Pediatrics":
-    #         return random.choice(prescriptions["pedia"])
-    #     else:
-    #         return random.choice(prescriptions["dental"])
 
     def reset(self):
         self.counter = 0
@@ -295,7 +301,7 @@ class HospitalEnv:
     def state(self):
         return {
             "patients": self.patients,
-            "category_queues": self.get_category_queues(),  # 🔥 NEW
+            "category_queues": self.get_category_queues(),
             "total_reward": self.total_reward,
             "treated": self.treated_count
         }
@@ -313,7 +319,7 @@ class HospitalEnv:
 
         reward += patient["severity"]
 
-        if patient["category"] in ["cardio", "neuro"] and patient["staff_type"] == "doctor":
+        if patient["category"] in ["Cardio", "Neuro"] and patient["staff_type"] == "doctor":
             reward += 5
         elif patient["severity"] <= 2 and patient["staff_type"] == "pharmacist":
             reward += 3
@@ -334,7 +340,10 @@ class HospitalEnv:
 
         done = len(self.patients) == 0
 
-        return self.state(), float(round(reward, 2)), done, {
+        reward = float(round(reward, 2))
+        reward = max(-10, min(10, reward))
+
+        return self.state(), reward, done, {
             "staff": patient["staff_type"],
             "prescription": prescription
         }
