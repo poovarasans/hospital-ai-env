@@ -6,25 +6,27 @@ def grade():
 
     total_reward = 0
     steps = 0
-
     done = False
 
     while not done and steps < 10:
-        # simple agent logic
         action = 0
 
         state, reward, done, _ = env.step(action)
         total_reward += reward
         steps += 1
 
-    # scoring logic
-    max_possible = 10
-    score = total_reward / max_possible
+    if steps == 0:
+        return 0.5
 
-    # STRICT normalization (0,1)
-    score = max(0.01, min(0.99, score))
+    score = total_reward / (steps * 10)
+
+    if score <= 0:
+        score = 0.01
+    elif score >= 1:
+        score = 0.99
 
     return score
+
 
 if __name__ == "__main__":
     print("Score:", grade())
