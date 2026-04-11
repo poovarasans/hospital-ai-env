@@ -18,12 +18,10 @@ def grade():
     if steps == 0:
         return 0.5
 
-    score = total_reward / (steps * 10)
-
-    if score <= 0:
-        score = 0.01
-    elif score >= 1:
-        score = 0.99
+    raw_score = total_reward / (steps * 10)
+    
+    epsilon = 1e-6
+    score = min(1 - epsilon, max(epsilon, raw_score))
 
     return score
 

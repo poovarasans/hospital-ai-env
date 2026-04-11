@@ -334,9 +334,9 @@ class HospitalEnv:
         for p in self.patients:
             p["wait"] += 1
 
-        for _ in range(random.randint(0, 2)):
-            self.counter += 1
-            self.patients.append(self.generate_patient(self.counter))
+        # if len(self.patients) < 5:
+        #     self.counter += 1
+        #     self.patients.append(self.generate_patient(self.counter))
 
         self.total_reward += reward
 
