@@ -1,3 +1,4 @@
+import math
 from env import HospitalEnv
  
 def grade():
@@ -10,18 +11,25 @@ def grade():
 
     while not done and steps < 10:
         action = 0
-
         state, reward, done, _ = env.step(action)
+        # print(f"Step {steps} → reward: {reward}")
         total_reward += reward
         steps += 1
+
+    # print("TOTAL:", total_reward)
+    # print("STEPS:", steps)
 
     if steps == 0:
         return 0.5
 
-    raw_score = total_reward / (steps * 10)
-    
-    epsilon = 1e-6
-    score = min(1 - epsilon, max(epsilon, raw_score))
+    raw_score = math.tanh(total_reward / 50)
+    score = (raw_score + 1) / 2
+
+    epsilon = 1e-3
+    score = min(1 - epsilon, max(epsilon, score))
+
+    # print("RAW SCORE:", raw_score)
+    # print("FINAL SCORE:", score)
 
     return score
 
