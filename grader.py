@@ -19,14 +19,14 @@ def grade_level(mode):
         from env import HospitalEnv
     except ImportError as e:
         sys.stderr.write(f"Error importing HospitalEnv: {e}\n")
-        return 0.1
+        return 0.5
     
     try:
         env = HospitalEnv(mode=mode)
         state = env.reset()
     except Exception as e:
         sys.stderr.write(f"Error initializing environment: {e}\n")
-        return 0.1
+        return 0.5
 
     total_reward = 0
     steps = 0
@@ -47,27 +47,36 @@ def grade_level(mode):
         if steps > 0:
             denominator = max(1, steps * 10)
             raw_score = total_reward / denominator
+
             if not math.isfinite(raw_score):
                 raw_score = 0.5
+
             raw_score = max(-10, min(10, raw_score))
+
             score = 1 / (1 + math.exp(-raw_score))
-            return max(0.01, min(0.99, score))
-        return 0.1
+
+            epsilon = 1e-2
+            score = max(epsilon, min(1 - epsilon, score))
+
+            return score
+
+        return 0.5
 
     if steps <= 0:
-        return 0.1
+        return 0.5
 
     denominator = max(1, steps * 10)
     raw_score = total_reward / denominator
 
     if not math.isfinite(raw_score):
-        raw_score = 0.1
+        raw_score = 0.5
 
     raw_score = max(-10, min(10, raw_score))
     
     score = 1 / (1 + math.exp(-raw_score))
 
-    score = max(0.01, min(0.99, score))
+    epsilon = 1e-2
+    score = max(epsilon, min(1 - epsilon, score))
 
     return score
 
@@ -88,4 +97,4 @@ if __name__ == "__main__":
         print(score)
     except Exception as e:
         sys.stderr.write(f"Fatal error in grader: {e}\n")
-        print(0.1)
+        print(0.5)
