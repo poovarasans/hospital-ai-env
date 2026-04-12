@@ -6,7 +6,7 @@ import sys
 def choose_action(patients):
     """Choose best patient based on severity + wait time."""
     if not patients:
-        return 0.1
+        return 0
     return max(
         range(len(patients)),
         key=lambda i: patients[i]["severity"] + patients[i]["wait"]
