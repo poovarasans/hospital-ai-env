@@ -4,7 +4,7 @@ from env import HospitalEnv
 
 
 def grade_level(mode):
-    """Grade a specific difficulty level."""
+    
     env = HospitalEnv(mode=mode)
     state = env.reset()
 
@@ -27,22 +27,23 @@ def grade_level(mode):
     if not math.isfinite(raw_score):
         raw_score = 0.5
 
+    raw_score = max(-10, min(10, raw_score))
+    
     score = 1 / (1 + math.exp(-raw_score))
 
-    epsilon = 1e-7
-    score = max(epsilon, min(1 - epsilon, score))
+    score = max(0.01, min(0.99, score))
 
     return score
 
 
 def grade():
-    """Grade based on task context."""
-    task = os.getenv("OPENENV_TASK", None)
+
+    task = os.getenv("OPENENV_TASK", "easy")
     
-    if task and task in ["easy", "medium", "hard"]:
-        return grade_level(task)
-    else:
-        return [grade_level(mode) for mode in ["easy", "medium", "hard"]]
+    if task not in ["easy", "medium", "hard"]:
+        task = "easy"
+    
+    return grade_level(task)
 
 
 if __name__ == "__main__":
