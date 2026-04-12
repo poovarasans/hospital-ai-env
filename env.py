@@ -262,27 +262,42 @@ class HospitalEnv:
             else:
                 return random.choice(prescriptions["dental"])
 
-        client = OpenAI(
-            base_url=base_url,
-            api_key=api_key
-        )
+        try:
+            client = OpenAI(
+                base_url=base_url,
+                api_key=api_key
+            )
 
-        # getting prescription from LLM
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a doctor."},
-                {"role": "user", "content": f"Give treatment for patient: {patient}"}
-            ]
-        )
+            # getting prescription from LLM
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a doctor."},
+                    {"role": "user", "content": f"Give treatment for patient: {patient}"}
+                ]
+            )
 
-        return response.choices[0].message.content
+            return response.choices[0].message.content
+        except Exception as e:
+            # Fallback to preset if API fails
+            category = patient["category"].lower()
+            if category in prescriptions:
+                return random.choice(prescriptions[category])
+            else:
+                return random.choice(prescriptions["general"])
 
     def reset(self):
         self.counter = 0
         self.completed = []
 
-        self.patients = [self.generate_patient(i) for i in range(5)]
+        # Generate patients based on difficulty mode
+        num_patients = {
+            "easy": 5,
+            "medium": 7,
+            "hard": 10
+        }.get(self.mode, 5)
+
+        self.patients = [self.generate_patient(i) for i in range(num_patients)]
 
         self.total_reward = 0
         self.treated_count = 0
@@ -319,24 +334,25 @@ class HospitalEnv:
 
         reward += patient["severity"]
 
+        # Reward for correct staff assignment
         if patient["category"] in ["Cardio", "Neuro"] and patient["staff_type"] == "doctor":
             reward += 7
         elif patient["severity"] <= 2 and patient["staff_type"] == "pharmacist":
             reward += 3
         elif patient["severity"] >= 4 and patient["staff_type"] == "doctor":
             reward += 4
+        elif patient["severity"] <= 2 and patient["staff_type"] == "nurse":
+            reward += 2
+        elif patient["category"] == "Ortho" and patient["staff_type"] == "physiotherapist":
+            reward += 5
         else:
-            reward -= 3
+            reward += 0  # ← No negative rewards, just neutral
 
         self.completed.append(patient)
         self.treated_count += 1
 
         for p in self.patients:
             p["wait"] += 1
-
-        # if len(self.patients) < 5:
-        #     self.counter += 1
-        #     self.patients.append(self.generate_patient(self.counter))
 
         self.total_reward += reward
 

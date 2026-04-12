@@ -1,21 +1,28 @@
 # agent.py
 from env import HospitalEnv
 
-env = HospitalEnv()
-state = env.reset()
+for mode in ["easy", "medium", "hard"]:
+    print(f"\n=== Testing {mode.upper()} mode ===")
+    
+    env = HospitalEnv(mode=mode)
+    state = env.reset()
 
-done = False
-total = 0
+    done = False
+    total = 0
 
-while not done:
-    patients = state["patients"]
+    while not done:
+        patients = state["patients"]
 
-    action = max(
-        range(len(patients)),
-        key=lambda i: patients[i]["severity"] + patients[i]["wait"]
-    )
+        if not patients:
+            break
 
-    state, reward, done, _ = env.step(action)
-    total += reward
+        action = max(
+            range(len(patients)),
+            key=lambda i: patients[i]["severity"] + patients[i]["wait"]
+        )
 
-print("Final Reward:", total)
+        state, reward, done, _ = env.step(action)
+        total += reward
+
+    print(f"Final Reward: {total}")
+    print(f"Patients Treated: {state['treated']}")

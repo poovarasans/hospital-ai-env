@@ -1,23 +1,39 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from env import HospitalEnv
+import sys
+import os
 
+# Add parent directory to path to import env
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from env import HospitalEnv
 import uvicorn
 
 app = FastAPI()
 
 env = None
+current_mode = "easy"
 
 
 class StepInput(BaseModel):
     action: int
 
 
-@app.post("/reset")
-def reset():
-    global env
+class ResetInput(BaseModel):
+    mode: str = "easy"
 
-    env = HospitalEnv(mode="easy")
+
+@app.post("/reset")
+def reset(data: ResetInput = None):
+    global env, current_mode
+    
+    # Support both with and without body
+    mode = data.mode if data else "easy"
+    if mode not in ["easy", "medium", "hard"]:
+        mode = "easy"
+    
+    current_mode = mode
+    env = HospitalEnv(mode=mode)
     state = env.reset()
 
     return {"state": state}

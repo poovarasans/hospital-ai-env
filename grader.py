@@ -1,22 +1,58 @@
 import math
 import os
-from env import HospitalEnv
+import sys
+
+
+def choose_action(patients):
+    """Choose best patient based on severity + wait time."""
+    if not patients:
+        return 0
+    return max(
+        range(len(patients)),
+        key=lambda i: patients[i]["severity"] + patients[i]["wait"]
+    )
 
 
 def grade_level(mode):
+    """Grade a specific difficulty level."""
+    try:
+        from env import HospitalEnv
+    except ImportError as e:
+        sys.stderr.write(f"Error importing HospitalEnv: {e}\n")
+        return 0.5
     
-    env = HospitalEnv(mode=mode)
-    state = env.reset()
+    try:
+        env = HospitalEnv(mode=mode)
+        state = env.reset()
+    except Exception as e:
+        sys.stderr.write(f"Error initializing environment: {e}\n")
+        return 0.5
 
     total_reward = 0
     steps = 0
     done = False
 
-    while not done and steps < 10:
-        action = 0
-        state, reward, done, _ = env.step(action)
-        total_reward += reward
-        steps += 1
+    try:
+        while not done and steps < 10:
+            patients = state.get("patients", [])
+            if not patients:
+                break
+            
+            action = choose_action(patients)
+            state, reward, done, _ = env.step(action)
+            total_reward += reward
+            steps += 1
+    except Exception as e:
+        sys.stderr.write(f"Error during episode: {e}\n")
+        if steps > 0:
+            denominator = max(1, steps * 10)
+            raw_score = total_reward / denominator
+            if not math.isfinite(raw_score):
+                raw_score = 0.5
+            raw_score = max(-10, min(10, raw_score))
+            score = 1 / (1 + math.exp(-raw_score))
+            return max(0.01, min(0.99, score))
+        return 0.5
 
     if steps <= 0:
         return 0.5
@@ -37,7 +73,7 @@ def grade_level(mode):
 
 
 def grade():
-
+    """Grade the task specified by OPENENV_TASK environment variable."""
     task = os.getenv("OPENENV_TASK", "easy")
     
     if task not in ["easy", "medium", "hard"]:
@@ -47,4 +83,9 @@ def grade():
 
 
 if __name__ == "__main__":
-    grade()
+    try:
+        score = grade()
+        print(score)
+    except Exception as e:
+        sys.stderr.write(f"Fatal error in grader: {e}\n")
+        print(0.5)
