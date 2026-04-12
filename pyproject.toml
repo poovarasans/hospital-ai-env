@@ -13,7 +13,9 @@ dependencies = [
     "openenv>=0.1.13"
 ]
 
-[project.scripts]
-server = "api:main"
-
 [tool.openenv]
+tasks = [
+    { name = "easy", grader = "grader.py" },
+    { name = "medium", grader = "grader.py" },
+    { name = "hard", grader = "grader.py" }
+]
